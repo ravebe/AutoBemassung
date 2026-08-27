@@ -1,7 +1,7 @@
 {
   "title": "AutoBemassung",
-  "url": "https://autobemassung.vercel.app",
-  "icon": "https://autobemassung.vercel.app/favicon.svg",
+  "url": "https://auto-bemassung.vercel.app",
+  "icon": "https://auto-bemassung.vercel.app/favicon.svg",
   "description": "Automatische Bemassung von Bauteilen",
-  "infoUrl": "https://autobemassung.vercel.app"
+  "infoUrl": "https://auto-bemassung.vercel.app"
 }
