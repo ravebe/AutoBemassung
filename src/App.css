@@ -52,3 +52,10 @@
 }
 .ab-mass-zeile span { color: var(--ab-text-2); }
 .ab-mass-zeile b { color: var(--ab-blue); font-size: 14px; }
+
+.ab-aktionen { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.ab-aktionen button {
+  padding: 8px 10px; font-size: 13px; font-weight: 600; cursor: pointer;
+  border: 1px solid var(--ab-blue); border-radius: 2px; background: var(--ab-blue); color: #fff;
+}
+.ab-aktionen button:disabled { opacity: 0.6; cursor: default; }

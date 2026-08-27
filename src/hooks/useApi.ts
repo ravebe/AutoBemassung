@@ -1,6 +1,6 @@
 // useApi.ts — Verbindung zur Trimble Connect Workspace API (gleiches Muster wie bauablaufsimulation-beta)
 import { useEffect, useState } from "react";
-import type { TcModel, ObjectBoundingBox } from "../types";
+import type { TcModel, ObjectBoundingBox, MeasurementMarkup } from "../types";
 
 export interface TcSelectionEvent {
   data?: { modelId?: string; objectRuntimeIds?: number[] }[];
@@ -12,6 +12,11 @@ export interface ApiInstance {
     getObjectBoundingBoxes: (modelId: string, objectRuntimeIds: number[]) => Promise<ObjectBoundingBox[]>;
     getObjectProperties: (modelId: string, ids: number[]) => Promise<unknown[]>;
     setSelection: (ids: number[]) => Promise<void>;
+    getCamera: () => Promise<{ position?: { x: number; y: number; z: number } }>;
+  };
+  markup: {
+    addMeasurementMarkups: (measurements: MeasurementMarkup[]) => Promise<MeasurementMarkup[]>;
+    removeMarkups: (ids: number[] | undefined) => Promise<void>;
   };
   extension: {
     requestPermission: (type: string) => Promise<string>;

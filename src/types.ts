@@ -25,6 +25,24 @@ export interface BemassungsErgebnis {
   tiefe: number;  // Y
 }
 
+// Markup-Datentypen der Trimble Connect Workspace API (Positionen in Millimetern).
+export interface MarkupPick {
+  positionX: number;
+  positionY: number;
+  positionZ: number;
+  modelId?: string;
+  objectId?: number;
+  type?: "point" | "line" | "lineSegment" | "plane";
+}
+
+export interface MeasurementMarkup {
+  id?: number;
+  start: MarkupPick;
+  end: MarkupPick;
+  mainLineStart: MarkupPick;
+  mainLineEnd: MarkupPick;
+}
+
 export function nsKey(key: string, projectId: string | null): string {
   return projectId ? `${key}:${projectId}` : key;
 }
