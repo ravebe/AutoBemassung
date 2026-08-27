@@ -25,7 +25,7 @@ export default function App() {
     (async () => {
       try {
         const boxes = await api.viewer.getObjectBoundingBoxes(modelId, [objectRuntimeId]);
-        const box = boxes?.[0];
+        const box = boxes?.[0]?.boundingBox;
         if (!box) { setLadeFehler("Keine Bounding Box für dieses Objekt erhalten"); return; }
         setErgebnis({
           modelId, objectRuntimeId,

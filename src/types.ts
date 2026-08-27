@@ -10,10 +10,8 @@ export interface TcModel {
 export interface Vec3 { x: number; y: number; z: number; }
 
 export interface ObjectBoundingBox {
-  modelId?: string;
-  objectRuntimeId?: number;
-  min: Vec3;
-  max: Vec3;
+  id: number;
+  boundingBox: { min: Vec3; max: Vec3 };
 }
 
 // Ergebnis einer Bounding-Box-Bemassung: Breite/Höhe/Tiefe des ausgewählten Objekts.

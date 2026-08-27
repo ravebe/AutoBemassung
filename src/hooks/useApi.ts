@@ -1,5 +1,5 @@
 // useApi.ts — Verbindung zur Trimble Connect Workspace API (gleiches Muster wie bauablaufsimulation-beta)
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { TcModel, ObjectBoundingBox } from "../types";
 
 export interface TcSelectionEvent {
@@ -8,15 +8,10 @@ export interface TcSelectionEvent {
 
 export interface ApiInstance {
   viewer: {
-    getModels: () => Promise<TcModel[]>;
-    getLoadedModel: () => Promise<TcModel[]>;
+    getModels: (state?: "loaded" | "unloaded") => Promise<TcModel[]>;
     getObjectBoundingBoxes: (modelId: string, objectRuntimeIds: number[]) => Promise<ObjectBoundingBox[]>;
     getObjectProperties: (modelId: string, ids: number[]) => Promise<unknown[]>;
     setSelection: (ids: number[]) => Promise<void>;
-    onSelectionChanged: {
-      addListener: (cb: (event: TcSelectionEvent) => void) => void;
-      removeListener: (cb: (event: TcSelectionEvent) => void) => void;
-    };
   };
   extension: {
     requestPermission: (type: string) => Promise<string>;
@@ -41,7 +36,6 @@ export function useApi(): UseApiReturn {
   const [aktivesModellId, setAktivesModellId] = useState<string | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [selektion, setSelektion] = useState<{ modelId: string; objectRuntimeId: number }[]>([]);
-  const selCbRef = useRef<((e: TcSelectionEvent) => void) | null>(null);
 
   useEffect(() => {
     let apiInst: ApiInstance | null = null;
@@ -58,7 +52,24 @@ export function useApi(): UseApiReturn {
           return;
         }
 
-        apiInst = (await wapi.connect(window.parent, () => {})) as ApiInstance;
+        // Events (u.a. Selektion) kommen über den onEvent-Callback von connect(),
+        // nicht über ein .addListener() auf der API-Oberfläche.
+        const onEvent = (event: string, data: unknown) => {
+          if (event !== "viewer.onSelectionChanged") return;
+          const items: { modelId: string; objectRuntimeId: number }[] = [];
+          const entries = (data as TcSelectionEvent)?.data;
+          if (Array.isArray(entries)) {
+            for (const entry of entries) {
+              const mid = entry?.modelId;
+              if (!mid) continue;
+              setAktivesModellId(mid);
+              for (const rId of entry?.objectRuntimeIds ?? []) items.push({ modelId: mid, objectRuntimeId: rId });
+            }
+          }
+          setSelektion(items);
+        };
+
+        apiInst = (await wapi.connect(window.parent, onEvent)) as ApiInstance;
         setApi(apiInst);
 
         const projPromise = apiInst.project.getProject()
@@ -72,31 +83,12 @@ export function useApi(): UseApiReturn {
         (async () => {
           for (let i = 0; i < 8; i++) {
             try {
-              const geladen = await apiInst!.viewer.getLoadedModel() as any;
-              const arr = Array.isArray(geladen) ? geladen : geladen ? [geladen] : [];
-              if (arr.length > 0) { setAktivesModellId(arr[0].id || arr[0].modelId); return; }
+              const geladen = await apiInst!.viewer.getModels("loaded");
+              if (geladen.length > 0) { setAktivesModellId(geladen[0].id); return; }
             } catch { /* ignore */ }
             await new Promise(r => setTimeout(r, i === 0 ? 0 : 100));
           }
         })();
-
-        try {
-          const cb = (event: TcSelectionEvent) => {
-            const items: { modelId: string; objectRuntimeId: number }[] = [];
-            const data = event?.data;
-            if (Array.isArray(data)) {
-              for (const entry of data) {
-                const mid = entry?.modelId;
-                if (!mid) continue;
-                setAktivesModellId(mid);
-                for (const rId of entry?.objectRuntimeIds ?? []) items.push({ modelId: mid, objectRuntimeId: rId });
-              }
-            }
-            setSelektion(items);
-          };
-          selCbRef.current = cb;
-          apiInst.viewer.onSelectionChanged.addListener(cb);
-        } catch (e) { console.error("[useApi] onSelectionChanged-Listener fehlgeschlagen:", e); }
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
         console.error("[useApi] Init Fehler:", e);
@@ -105,12 +97,6 @@ export function useApi(): UseApiReturn {
     }
 
     init();
-
-    return () => {
-      if (apiInst && selCbRef.current) {
-        try { apiInst.viewer.onSelectionChanged.removeListener(selCbRef.current); } catch { /* ignore */ }
-      }
-    };
   }, []);
 
   return { api, ready, fehler, aktivesModellId, projectId, selektion };
